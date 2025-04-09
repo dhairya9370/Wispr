@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifying...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        /* Loader */
+        .loader-container {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        .verifying-text {
+            font-size: 1.2rem;
+            color: #333;
+            opacity: 0;
+            animation: fadeIn 2s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Verified Animation */
+        .verified-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-top: 20px;
+            opacity: 0;
+        }
+
+        .circle {
+            width: 80px;
+            height: 80px;
+            background-color: #0080ff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            z-index: 2;
+            opacity: 0;
+        }
+
+        .tick-svg {
+            width: 40px;
+            height: 40px;
+            stroke: white;
+            stroke-width: 5;
+            stroke-linecap: round;
+            fill: none;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+        }
+
+        .text-mask {
+            position: relative;
+            width: 180px;
+            height: 30px;
+            overflow: hidden;
+            z-index: 1;
+            margin-left: 20px;
+        }
+
+        .text-container {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            transform: translateX(-120%);
+            opacity: 0;
+        }
+
+        .verified-text {
+            font-size: 22px;
+            font-weight: bold;
+            color: #000000;
+            transform: translateX(5%);
+        }
+
+        /* Animations */
+        @keyframes popUp {
+            0% { opacity: 0; transform: scale(0.2) translateY(-10px); }
+            70% { transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes drawCheck {
+            0% { stroke-dashoffset: 48; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes slideInText {
+            0% { transform: translateX(-120%); opacity: 0; }
+            50% { opacity: 0; }
+            100% { transform: translateX(5%); opacity: 1; }
+        }
+
+        @keyframes shiftLeft {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-60px); }
+        }
+    </style>
+</head>
+<body>
+    
+   
+
+    <div class="loader-container">
+        <h1>Welcome </h1><h1 id="btId"><%= btId.toUpperCase() %></h1>
+        <div class="spinner"></div>
+        <p class="verifying-text">Verifying Credentials...</p>
+    </div>
+
+    <div class="verified-container">
+        <div class="circle">
+            <svg class="tick-svg" viewBox="0 0 50 50">
+                <polyline points="12,27 22,37 38,13"></polyline>
+            </svg>
+        </div>
+        <div class="text-mask">
+            <div class="text-container">
+                <div class="verified-text">Verified User</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // const socket = new WebSocket("ws://localhost:3000");
+        let btId = JSON.parse('<%-loggedIn%>');
+        setTimeout(() => {
+            document.querySelector(".loader-container").style.display = "none"; // Hide loader
+            document.querySelector(".verified-container").style.opacity = "1"; // Show Verified Section
+            
+            let circle = document.querySelector(".circle");
+            let tick = document.querySelector(".tick-svg");
+            let textContainer = document.querySelector(".text-container");
+
+            circle.style.animation = "popUp 0.5s cubic-bezier(0.17, 0.67, 0.83, 1.5) forwards, shiftLeft 0.4s ease-out 1.4s forwards";
+            tick.style.animation = "drawCheck 0.4s ease-out 0.6s forwards";
+            textContainer.style.animation = "slideInText 0.6s ease-out 1s forwards";
+
+            setTimeout(() => {
+                window.location.href = `http://localhost:3000/wispr/home/${btId.toString().trim().toUpperCase()}`;
+               
+            }, 2500);
+        }, 3000);
+    </script>
+
+</body>
+</html>
+
