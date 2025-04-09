@@ -35,12 +35,10 @@
             <div class="icon icons"><i class="ph ph-circle"></i></div>
             <hr>
             <div class="icon icons"><i id="gear" class="ph ph-gear"></i></div>
-
             <div id="profile-div-container">
                 <div id="profile-image"  title="Profile"></div>
             
             </div>
-
             <div id="btId" style="display:none;">
                 <%=btId%>
             </div>
@@ -52,6 +50,7 @@
             <div id="searchbar">
                 <i class="ph ph-magnifying-glass"></i>
                 <input type="text" id="search" placeholder="Search or start a new chat">
+
             </div>
             <div id="chat-list">
                 <% chats.sort((a, b) => new Date(b.at) - new Date(a.at));
@@ -104,6 +103,9 @@
                     <% } %>
                 <% } %>
             </div>
+            <div id="searched-list" style="display:none">
+
+            </div>
         </div>
         <div class="resizer" id="resizer"></div>
         <div class="pane" id="chat-window">
@@ -115,7 +117,6 @@
                     <p style="opacity:0.6">Send and recieve messages without keeping your phone online.</p>
                     <p style="opacity:0.6"> Use Wispr on all linked devices.</p>
                 </div>
-
                 <p class="encryption" style="opacity:0.6"><i class="ph ph-lock"></i> End-to-end encrypted</p>
             </div>
             <div class="chatting-container">
@@ -198,7 +199,9 @@
             gear.style.transform = gear.style.transform === "rotate(45deg)" ? "rotate(0deg)" : "rotate(45deg)";
         });
         //profile button
-      
+
+
+
         //resizer
         const resizer = document.getElementById("resizer");
         const chat_container = document.getElementById("chat-container");
@@ -571,7 +574,22 @@
         });
         
         //search algorithm
+        let chatList=document.querySelector("#chat-list");
+        let searchListDiv=document.querySelector("#searched-list");
+        let allIds_names=[];
+        allIds_names=JSON.parse('<%- ids_names %>');
         let search = document.querySelector("#search");
+        search.addEventListener("input",()=>{
+            // console.log(search.value,allIds_names);
+            searchListDiv.style.display="flex";
+            chatList.style.display="none";
+            for(user of allIds_names){
+                if(user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase())){
+                // console.log(user["name"],user["btId"]);
+            }
+        }
+        });
+
     </script>
 </body>
 </html>

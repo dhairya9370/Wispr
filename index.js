@@ -190,7 +190,6 @@ app.get("/wispr/home/:btId", async(req, res) => {
   else{
   let Chat = mongoose.model(btId, chatSchema);
   const sentChats = await Chat.find({ from_id: btId });
-  
     let ids= await credentials.find({}, { btId: 1, _id: 0 });
     let received_messages=[];
     for(const id of ids){
@@ -201,9 +200,13 @@ app.get("/wispr/home/:btId", async(req, res) => {
     }}
     // console.log(received_messages);
     let allMsgs=sentChats.concat(received_messages);
-    // console.log(allMsgs);
-   res.render("home", {btId,Id:JSON.stringify(btId),chats:allMsgs,sent_messages:JSON.stringify(sentChats),received_messages :JSON.stringify(received_messages) });
-}}});
+    
+    let ids_names= await credentials.find({}, { btId: 1,name:1, _id: 0 });
+    // console.log(ids_names);
+    res.render("home", {ids_names:JSON.stringify(ids_names),btId,Id:JSON.stringify(btId),chats:allMsgs,sent_messages:JSON.stringify(sentChats),received_messages :JSON.stringify(received_messages) });
+    
+  
+  }}});
 
 app.post("/api/sendMessage", async (req, res) => {
   const { from_id, to_id, message } = req.body;
