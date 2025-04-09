@@ -204,8 +204,6 @@ app.get("/wispr/home/:btId", async(req, res) => {
     let ids_names= await credentials.find({}, { btId: 1,name:1, _id: 0 });
     // console.log(ids_names);
     res.render("home", {ids_names:JSON.stringify(ids_names),btId,Id:JSON.stringify(btId),chats:allMsgs,sent_messages:JSON.stringify(sentChats),received_messages :JSON.stringify(received_messages) });
-    
-  
   }}});
 
 app.post("/api/sendMessage", async (req, res) => {
@@ -243,4 +241,4 @@ app.use((req, res) => {
 });
 server.listen(3000,(req,res)=>{
   console.log("wispr on port 3000");
-})
+});

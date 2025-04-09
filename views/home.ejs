@@ -175,6 +175,7 @@
         let newId='<%=btId%>';
         const socket = io("http://localhost:3000");
         socket.emit("userOnline",newId);
+
         // socket.off("userOnline");
         // socket.emit("newUserOnline",newId);
         //sidebar
@@ -198,9 +199,9 @@
         gear.addEventListener("click", () => {
             gear.style.transform = gear.style.transform === "rotate(45deg)" ? "rotate(0deg)" : "rotate(45deg)";
         });
+
+
         //profile button
-
-
 
         //resizer
         const resizer = document.getElementById("resizer");
@@ -224,6 +225,49 @@
                 document.removeEventListener("mousemove", onMouseMove);
             });
         });
+        
+                //search algorithm
+                let chatList=document.querySelector("#chat-list");
+        let searchListDiv=document.querySelector("#searched-list");
+        let allIds_names=[];
+        allIds_names=JSON.parse('<%- ids_names %>');
+        let search = document.querySelector("#search");
+        
+        search.addEventListener("input",()=>{
+            // console.log(search.value,allIds_names);
+            searchListDiv.style.display="flex";
+            chatList.style.display="none";
+            searchListDiv.innerHTML="";
+            if(search.value.toString().trim()==""){
+                searchListDiv.style.backgroundImage= 'url("/emptySearch.png")';
+            }
+            else{
+                searchListDiv.style.backgroundImage= 'none';
+                for(user of allIds_names){
+                    if(search.value.toString().trim()!=""  && (user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase()))){
+                        searchListDiv.innerHTML+=`<div class="chatbox">
+                            <div id="DPblock">
+                                <div class="photo"><img src="/defaultDP.jpg"></div>
+                            </div>
+                            <div id="block2">
+                                <div id="block2-1">
+                                    <div id="name">${user["name"]}</div>
+                                </div>
+                                <div id="block2-2">
+                                    <div> ${user["btId"].toUpperCase()}</div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    }
+                }
+                if(searchListDiv.innerHTML.toString().trim()=="" ){
+                    searchListDiv.style.backgroundImage= 'url("/emptySearch.png")';
+                }
+        }});
+
+        
+        
         let chatContainer = document.querySelector(".chatting-container");
         chatContainer.style.display = "none";//empty
         let emptyContainer = document.querySelector("#empty-chat-window-container");
@@ -573,22 +617,6 @@
             }
         });
         
-        //search algorithm
-        let chatList=document.querySelector("#chat-list");
-        let searchListDiv=document.querySelector("#searched-list");
-        let allIds_names=[];
-        allIds_names=JSON.parse('<%- ids_names %>');
-        let search = document.querySelector("#search");
-        search.addEventListener("input",()=>{
-            // console.log(search.value,allIds_names);
-            searchListDiv.style.display="flex";
-            chatList.style.display="none";
-            for(user of allIds_names){
-                if(user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase())){
-                // console.log(user["name"],user["btId"]);
-            }
-        }
-        });
 
     </script>
 </body>
