@@ -103,9 +103,7 @@
                     <% } %>
                 <% } %>
             </div>
-            <div id="searched-list" style="display:none">
-
-            </div>
+            <div id="searched-list" class="empty"></div>
         </div>
         <div class="resizer" id="resizer"></div>
         <div class="pane" id="chat-window">
@@ -175,6 +173,12 @@
         let newId='<%=btId%>';
         const socket = io("http://localhost:3000");
         socket.emit("userOnline",newId);
+        let onlineUsers=[];
+        socket.on("updateOnlineStatus", (onlineIds) => {
+            // console.log(onlineIds);
+            onlineUsers=onlineIds;
+            checkConnection();
+        });
 
         // socket.off("userOnline");
         // socket.emit("newUserOnline",newId);
@@ -226,25 +230,24 @@
             });
         });
         
-                //search algorithm
-                let chatList=document.querySelector("#chat-list");
+        //search algorithm
+        let chatList=document.querySelector("#chat-list");
         let searchListDiv=document.querySelector("#searched-list");
         let allIds_names=[];
         allIds_names=JSON.parse('<%- ids_names %>');
         let search = document.querySelector("#search");
-        
+
         search.addEventListener("input",()=>{
-            // console.log(search.value,allIds_names);
-            searchListDiv.style.display="flex";
-            chatList.style.display="none";
             searchListDiv.innerHTML="";
-            if(search.value.toString().trim()==""){
-                searchListDiv.style.backgroundImage= 'url("/emptySearch.png")';
-            }
-            else{
-                searchListDiv.style.backgroundImage= 'none';
+            searchListDiv.classList.add("active");
+            chatList.classList.add("inactive");
+            
+            if(search.value.toString().trim()!=""){
+                if(searchListDiv.classList.contains("empty")){
+                searchListDiv.classList.remove("empty");
+                searchListDiv.classList.add("filled");}
                 for(user of allIds_names){
-                    if(search.value.toString().trim()!=""  && (user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase()))){
+                    if((user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase()))){
                         searchListDiv.innerHTML+=`<div class="chatbox">
                             <div id="DPblock">
                                 <div class="photo"><img src="/defaultDP.jpg"></div>
@@ -261,13 +264,27 @@
 
                     }
                 }
-                if(searchListDiv.innerHTML.toString().trim()=="" ){
-                    searchListDiv.style.backgroundImage= 'url("/emptySearch.png")';
+                if(searchListDiv.innerHTML.toString().trim()==""){
+                    searchListDiv.classList.remove("filled");
+                    searchListDiv.classList.add("empty");
                 }
-        }});
+            }else{
+                if(searchListDiv.classList.contains("filled")){
+                    searchListDiv.classList.remove("filled");
+                    searchListDiv.classList.add("empty");
+                }
+            }
+        });
+        document.addEventListener("click",(event)=>{
+            // console.log(event.target);
+        if( !search.contains(event.target) && chatList.classList.contains("inactive") && searchListDiv.classList.contains("active")){
+            // console.log("ready to close search algorithm");
+            searchListDiv.classList.remove("active");
+               searchListDiv.classList.remove("filled");
+            chatList.classList.remove("inactive");
+        }
+        });
 
-        
-        
         let chatContainer = document.querySelector(".chatting-container");
         chatContainer.style.display = "none";//empty
         let emptyContainer = document.querySelector("#empty-chat-window-container");
@@ -276,12 +293,13 @@
         let receiver_status = document.querySelector("#receiver-status");
         let sortedMsgs = [];
         let loggedIn=JSON.parse('<%-Id%>');
-        async function sortChats(active_receiver_id) {
-
+        let active_receiver_id="";
+        async function sortChats() {
+            if(active_receiver_id!=""){
             const response = await fetch("/api/getAllMessages", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chats_with: active_receiver_id.trim().toString() , loggedIn:loggedIn }),
+                body: JSON.stringify({ chats_with: active_receiver_id.trim() , loggedIn:loggedIn }),
             });
             const result = await response.json();
             // console.log(result.received,result.sent);
@@ -327,7 +345,7 @@
                 return timeA - timeB;
             });
             return sortedMsgs;
-        }
+        }}
 
         //recent chat, recent chat time, for chat list's chat boxes
         function formatTimestamp(dateString) {
@@ -429,7 +447,7 @@
 
         async function fetch_latest() {
             for (receiver of document.querySelectorAll(".chatbox")) {
-                let sorted = await sortChats(receiver.querySelector("#to_id").textContent.trim());
+                let sorted = await sortChats();
                 // console.log(sorted[sorted.length-1].classList[1]);
                 
                 let time =await sorted[sorted.length - 1].children[1].innerText.trim().toString();
@@ -443,18 +461,19 @@
                 }
             }
         };
-        fetch_latest();
-        // let socket= io();
-        // socket.on("updateOnlineStatus", (onlineIds) => {
+        if(active_receiver_id!=""){fetch_latest();}
 
-        //     console.log(receiver_id.innerText);
-        //            if (onlineIds.includes(receiver_id.innerText)) {
-        //               console.log("updated this chatbox's receiver status")
-        //               receiver_status.innerText = "online";
-        //            } else {
-        //               receiver_status.innerText = "offline";
-        //            }
-        //         });
+        //when a user is chatting with any online receiver,
+        //  and if he goes offline, then udate the receiver status dynamically
+        function checkConnection(){
+            if(!onlineUsers.includes(active_receiver_id) && receiver_status.innerText.trim()=="online"){
+                receiver_status.innerText = "offline";
+            }
+            else if(onlineUsers.includes(active_receiver_id) && receiver_status.innerText=="offline"){
+                receiver_status.innerText = "online";
+            }
+        }
+        
         document.querySelectorAll(".chatbox").forEach(chatbox => {
             chatbox.addEventListener("mouseover", function () {
                 this.style.background = "#e9ecef"; // Light gray on hover
@@ -474,22 +493,21 @@
             });
 
             chatbox.addEventListener("click", async function () {
-               receiver_name.innerText = this.children.block2.children["block2-1"].children[1].innerText.trim();
+                // console.log("clicked chatbox");
+                receiver_name.innerText = this.children.block2.children["block2-1"].children[1].innerText.trim();
                 receiver_id.innerText = this.children.block2.children["block2-1"].children[0].innerText.trim();
-                console.log(receiver_id.innerText);console.log(receiver_status.innerText);
-                // socket.off("updateOnlineStatus");
-                 socket.on("updateOnlineStatus", (onlineIds) => {
-                    console.log(onlineIds);
-                   if (onlineIds.includes(receiver_id.innerText.toString())) {
-                      console.log("updated this chatbox's receiver status")
-                      receiver_status.innerText = "online";
-                   } else {
-                      receiver_status.innerText = "offline";
-                   }
-                });
-                // socket.off("updateOnlineStatus");
-
-                sortedMsgs = await sortChats(receiver_id.innerText.trim().toString());
+                // console.log(receiver_id.innerText);console.log(receiver_status.innerText);
+                // console.log(onlineUsers.includes(receiver_id.innerText));
+                if (onlineUsers.includes(receiver_id.innerText)) {
+                    // console.log("updated this chatbox's receiver status")
+                    receiver_status.innerText = "online";
+                }
+                else {
+                    receiver_status.innerText = "offline";
+                }
+                
+                active_receiver_id= receiver_id.innerText;
+                sortedMsgs = await sortChats();
                 //add time stamps
 
                 let prev = addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
@@ -567,7 +585,6 @@
             }
 
             try {
-                socket.emit('sendMessage',message);
                 const toId = document.querySelector("#receiver-id").textContent.trim();
                 const fromId = loggedIn;
                 const response = await fetch("/api/sendMessage", {
@@ -576,6 +593,10 @@
                     body: JSON.stringify({ from_id: fromId, message, to_id: toId }), // Send the message and to_id
                 });
                 const result = await response.json();
+                if(onlineUsers.includes(toId)){
+                    //display dynamically the message in the online receiver's chatbox
+                    socket.emit("sendMessage",{fromId:fromId,msg:message,toId:toId,at:result.message.at});
+                };
                 // await console.log(result.message.message);
                 let chatBox = document.querySelector("#chatBox");
                 let p = document.createElement("p");
@@ -596,7 +617,6 @@
                         if (receiver_chatboxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
                             // console.log(receiver_chatboxes[i].children.block2.children[0].children[0].innerText);
                             receiver_chatboxes[i].click(); break;
-
                         }
                     }
                 }
@@ -617,6 +637,36 @@
             }
         });
         
+        socket.on("receiveMessage", async ({msg,fromId,at})=>{
+            if(fromId==active_receiver_id){
+                // console.log("received message :",msg,"fromId: ",fromId,"at:",at);
+                let p = document.createElement("p");
+                p.innerText = msg.toString();
+                let time = document.createElement("div");
+                time.className = "chattingbox-chat-time";
+                time.innerText =addTimeStampsInChats(at).time;
+                let message = document.createElement("div");
+                message.className = "message received";
+                message.appendChild(p);
+                message.appendChild(time);
+
+                if (addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(at).date) {
+                    let receiver_chatboxes = document.querySelectorAll(".chatbox");
+                    for (i = 0; i < receiver_chatboxes.length; i++) {
+                        if (receiver_chatboxes[i].children.block2.children[0].children[0].innerText.trim() == fromId) {
+                            console.log(receiver_chatboxes[i].children.block2.children[0].children[0].innerText);
+                            await receiver_chatboxes[i].click();
+                            console.log("dynamically clicked chatBox"); 
+                            break;
+                        }
+                    }
+                }
+                else{
+                chatBox.appendChild(message);
+                chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+                }
+            }
+        });
 
     </script>
 </body>

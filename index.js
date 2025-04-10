@@ -30,26 +30,30 @@ async function main() {
   await mongoose.connect('mongodb://127.0.0.1:27017/wispr');
 }
 const { Server } = require("socket.io");
-const io=new Server(server,{
-  cors: {
-    origin: "*", // Allow all origins (use specific origins in production)
-    methods: ["GET", "POST"],
-  },
-});
+const io=new Server(server
+//   ,{
+//   cors: {
+//     origin: "*", // Allow all origins (use specific origins in production)
+//     methods: ["GET", "POST"],
+//   },
+// }
+);
 
 const onlineUsers = new Map();
+let active_receiver="";
+ let now;
 io.on("connection", (socket) => {
   console.log("New User Connected:", socket.id);
   
   // Store user on connection
   socket.on("userOnline", (btId) => {
     // Avoid duplicate entries with same btId
+    if (!onlineUsers.has(btId)) {
     onlineUsers.set(btId, socket.id);
     socket.btId = btId; // store for disconnect
     console.log("User Online =>", btId, socket.id);
-    
     // Notify all users about online status
-    io.emit("updateOnlineStatus", Array.from(onlineUsers.keys()));
+    io.emit("updateOnlineStatus", Array.from(onlineUsers.keys()));}
   });
 
   // When user disconnects
@@ -61,7 +65,22 @@ io.on("connection", (socket) => {
 
     io.emit("updateOnlineStatus", Array.from(onlineUsers.keys()));
   });
+
+  //when a user sends a message to a online receiver
+  socket.on("sendMessage",({fromId,msg,toId,at})=>{
+  if(onlineUsers.has(active_receiver)){
+    // console.log(active_receiver,"is Online!!");
+      // console.log(toId);
+      if(onlineUsers.has(toId)){
+        // console.log("ready to send ",msg," to ",toId,onlineUsers.get(toId)," at ",at);
+        socket.to(onlineUsers.get(toId)).emit("receiveMessage",{msg:msg,fromId:fromId,at:at});
+      }
+    }; 
+  }
+);
+
 });
+ 
 
 
 async function getCollectionNames() {
@@ -200,7 +219,6 @@ app.get("/wispr/home/:btId", async(req, res) => {
     }}
     // console.log(received_messages);
     let allMsgs=sentChats.concat(received_messages);
-    
     let ids_names= await credentials.find({}, { btId: 1,name:1, _id: 0 });
     // console.log(ids_names);
     res.render("home", {ids_names:JSON.stringify(ids_names),btId,Id:JSON.stringify(btId),chats:allMsgs,sent_messages:JSON.stringify(sentChats),received_messages :JSON.stringify(received_messages) });
@@ -208,11 +226,12 @@ app.get("/wispr/home/:btId", async(req, res) => {
 
 app.post("/api/sendMessage", async (req, res) => {
   const { from_id, to_id, message } = req.body;
+  active_receiver=to_id.trim();
   let from= await credentials.find({btId:from_id}, { name:1, _id: 0 });
   let to= await credentials.find({btId:to_id}, { name:1, _id: 0 });
   // console.log(message,from[0].name,"{",from_id,"}",to[0].name,"{",to_id,"}");
   let Chat = mongoose.model(from_id.trim(), chatSchema);
-  let now=new Date();
+  now=new Date();
   const newMessage = new Chat({
     from: from[0].name,
     from_id: from_id.trim(),
@@ -227,6 +246,7 @@ app.post("/api/sendMessage", async (req, res) => {
 app.post("/api/getAllMessages", async (req, res) => {
   
   let {chats_with,loggedIn}=req.body; chats_with=chats_with.toString().trim().toLowerCase();
+  if(chats_with!=""){
   let Chat = mongoose.model(loggedIn, chatSchema);
   const sentChats = await Chat.find({ from_id: loggedIn ,to_id:chats_with});
     let received_messages=[];
@@ -234,7 +254,7 @@ app.post("/api/getAllMessages", async (req, res) => {
       received_messages=await Chat.find({to_id:loggedIn});
     let allMsgs=sentChats.concat(received_messages);
     res.json({ success: true,sent : sentChats, received : received_messages,allMessages: allMsgs,loggedIn:loggedIn });
-});
+}});
 
 app.use((req, res) => {
   res.status(404).render("notFound"); // Assuming you have a 404.ejs or 404.html
