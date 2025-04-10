@@ -66,13 +66,11 @@
                                 <div id="block2">
                                     <div id="block2-1">
                                         <p id="to_id"><%= chat.to_id %></p>
-                                        <div id="name">
-                                            <%= chat.to %>
-                                        </div>
+                                        <div id="name"><%= chat.to %></div>
                                         <div id="time"></div>
                                     </div>
                                     <div id="block2-2">
-                                        <div id="recent-chat">You reacted ! to "Image", with happiness</div>
+                                        <div id="recent-chat"></div>
                                     </div>
                                 </div>
                             </div>
@@ -88,14 +86,11 @@
                                 <div id="block2">
                                     <div id="block2-1">
                                         <p id="to_id"><%= chat.from_id %></p>
-                                        <div id="name">
-                                            <%= chat.from %>
-                                        </div>
+                                        <div id="name"><%= chat.from %></div>
                                         <div id="time"></div>
                                     </div>
                                     <div id="block2-2">
-                                        <div id="recent-chat">You reacted ! to "Image", with
-                                            happiness</div>
+                                        <div id="recent-chat"></div>
                                     </div>
                                 </div>
                             </div>
@@ -171,6 +166,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script >
         let newId='<%=btId%>';
+        let chatBoxes= document.querySelectorAll(".chatbox");
         const socket = io("http://localhost:3000");
         socket.emit("userOnline",newId);
         let onlineUsers=[];
@@ -237,18 +233,17 @@
         allIds_names=JSON.parse('<%- ids_names %>');
         let search = document.querySelector("#search");
 
-        search.addEventListener("input",()=>{
+        search.addEventListener("input",async ()=>{
             searchListDiv.innerHTML="";
             searchListDiv.classList.add("active");
             chatList.classList.add("inactive");
-            
             if(search.value.toString().trim()!=""){
                 if(searchListDiv.classList.contains("empty")){
-                searchListDiv.classList.remove("empty");
-                searchListDiv.classList.add("filled");}
+                    searchListDiv.classList.remove("empty");
+                    searchListDiv.classList.add("filled");}
                 for(user of allIds_names){
-                    if((user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase()))){
-                        searchListDiv.innerHTML+=`<div class="chatbox">
+                    if(user["btId"]!=newId && (user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase()))){
+                        searchListDiv.innerHTML+=`<div class="chatbox searched">
                             <div id="DPblock">
                                 <div class="photo"><img src="/defaultDP.jpg"></div>
                             </div>
@@ -257,11 +252,77 @@
                                     <div id="name">${user["name"]}</div>
                                 </div>
                                 <div id="block2-2">
-                                    <div> ${user["btId"].toUpperCase()}</div>
+                                    <div id="searched_id"> ${user["btId"].toUpperCase()}</div>
                                 </div>
                             </div>
                         </div>`;
+                        await document.querySelectorAll(".searched").forEach((box)=>{
 
+                        box.addEventListener("mouseover", function () {
+                            this.style.background = "#e9ecef"; // Light gray on hover
+                        });
+
+                        box.addEventListener("mouseout", function () {
+                            this.style.background = ""; // Reset background on hover out
+                        });
+
+                        box.addEventListener("mousedown", function () {
+                            this.style.background = "#d6d8db";
+                        
+                        });
+
+                        box.addEventListener("mouseup", function () {
+                            this.style.background = "#e9ecef"; // Back to hover color after release
+                        });
+
+                        box.addEventListener("click", async ()=>{
+                            let name=box.querySelector("#name").innerText.toString().trim();
+                            let toId=box.querySelector("#searched_id").innerText.toString().trim().toLowerCase();
+                            let newChatBox=document.createElement("div");
+                            newChatBox.innerHTML=`<div class="chatbox">
+                                            <div id="DPblock">
+                                                <div class="photo"><img src="/defaultDP.jpg"></div>
+                                            </div>
+                                            <div id="block2">
+                                                <div id="block2-1">
+                                                    <p id="to_id">${toId}</p>
+                                                    <div id="name">${name}</div>
+                                                    <div id="time"></div>
+                                                </div>
+                                                <div id="block2-2">
+                                                    <div id="recent-chat"></div>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                                        active_receiver_id=toId;
+
+
+                                        let present=false;let presentAtIdx;
+                                        for(i=0;i<chatBoxes.length;i++){
+                                               if(chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId){
+                                                presentAtIdx=i;
+                                                present=true;
+                                                break;
+                                               }
+                                        }
+                        if(!present){
+                            
+                            chatBoxes= document.querySelectorAll(".chatbox");//reload chatboxes
+                            closeSearchList();
+                            chatList.appendChild(newChatBox);
+                            await activateChatBoxes();
+                            
+                            let lastChatBox = chatBoxes[chatBoxes.length-1];
+                            // console.log(chatBoxes[2]);
+                            lastChatBox.click();//not working
+                            // await insertChatMsgs(toId,name);
+                        }else{
+                            let alreadyPresent = chatBoxes[presentAtIdx];
+                            alreadyPresent.click();
+                        }
+                            // newChatBox.click();
+                        });
+                    });
                     }
                 }
                 if(searchListDiv.innerHTML.toString().trim()==""){
@@ -274,17 +335,28 @@
                     searchListDiv.classList.add("empty");
                 }
             }
+
+
         });
         document.addEventListener("click",(event)=>{
             // console.log(event.target);
-        if( !search.contains(event.target) && chatList.classList.contains("inactive") && searchListDiv.classList.contains("active")){
-            // console.log("ready to close search algorithm");
-            searchListDiv.classList.remove("active");
-               searchListDiv.classList.remove("filled");
-            chatList.classList.remove("inactive");
-        }
+            if(((searchListDiv.classList.contains("empty") && searchListDiv.contains(event.target)) || (!searchListDiv.classList.contains("filled") || !searchListDiv.contains(event.target))) && !search.contains(event.target) && chatList.classList.contains("inactive") && searchListDiv.classList.contains("active")){
+                closeSearchList();
+            }
         });
+        function closeSearchList(){
+                searchListDiv.classList.remove("active");
+                searchListDiv.classList.remove("filled");
+                chatList.classList.remove("inactive");
+                search.value="";
+                searchListDiv.innerHTML="";
+            }
+            
 
+            //debugging
+
+            //if()
+        
         let chatContainer = document.querySelector(".chatting-container");
         chatContainer.style.display = "none";//empty
         let emptyContainer = document.querySelector("#empty-chat-window-container");
@@ -294,6 +366,7 @@
         let sortedMsgs = [];
         let loggedIn=JSON.parse('<%-Id%>');
         let active_receiver_id="";
+
         async function sortChats() {
             if(active_receiver_id!=""){
             const response = await fetch("/api/getAllMessages", {
@@ -339,11 +412,12 @@
             }
             let unsorted = receivedUnsorted.concat(sentUnsorted);
             // console.log(unsorted);
-            let sortedMsgs = await unsorted.sort((a, b) => {
+            sortedMsgs = await unsorted.sort((a, b) => {
                 let timeA = new Date(a.querySelector(".chattingbox-chat-time").textContent.trim());
                 let timeB = new Date(b.querySelector(".chattingbox-chat-time").textContent.trim());
                 return timeA - timeB;
             });
+           
             return sortedMsgs;
         }}
 
@@ -445,12 +519,15 @@
 
         };
 
+        // //fetch latest
         async function fetch_latest() {
-            for (receiver of document.querySelectorAll(".chatbox")) {
+            for (receiver of chatBoxes) {
+               
+                active_receiver_id=receiver.childNodes[3].childNodes[1].childNodes[1].innerText.trim().toLowerCase();
                 let sorted = await sortChats();
                 // console.log(sorted[sorted.length-1].classList[1]);
                 
-                let time =await sorted[sorted.length - 1].children[1].innerText.trim().toString();
+                let time =sorted[sorted.length - 1].children[1].innerText.trim().toString();
                 // console.log(time);
                 receiver.querySelector("#time").innerText = formatTimestamp(time);
 
@@ -460,8 +537,12 @@
                     receiver.querySelector("#recent-chat").innerText = sorted[sorted.length - 1].children[0].innerText.toString();
                 }
             }
+            active_receiver_id="";
         };
-        if(active_receiver_id!=""){fetch_latest();}
+        document.addEventListener("DOMContentLoaded", async() => {
+            await fetch_latest();
+            await activateChatBoxes();
+        });
 
         //when a user is chatting with any online receiver,
         //  and if he goes offline, then udate the receiver status dynamically
@@ -474,7 +555,54 @@
             }
         }
         
-        document.querySelectorAll(".chatbox").forEach(chatbox => {
+        async function insertChatMsgs(receiver_id,receiver_name){
+            if (onlineUsers.includes(receiver_id,receiver_name)) {
+                // console.log("updated this chatbox's receiver status")
+                receiver_status.innerText = "online";
+            }
+            else{
+                receiver_status.innerText = "offline";
+            }
+
+            sortedMsgs = await sortChats();
+            //add time stamps
+            if(sortedMsgs.length!=0){
+            let prev = addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
+            for (i = sortedMsgs.length - 1; i >= 0; i--) {
+                let present = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
+                if (prev == present) {//move up
+                    if (i == 0) {
+                        //insert at index '0'
+                        sortedMsgs[i].querySelector(".chattingbox-chat-time").innerText = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim()).time;
+                        let date = document.createElement("div");
+                        date.className = "messageTimeStamp";
+                        date.innerText = prev;
+                        sortedMsgs.splice(0, 0, date);
+                        break;
+                    }
+                }
+                else {
+                    let date = document.createElement("div");
+                    date.className = "messageTimeStamp";
+                    date.innerText = prev;
+                    prev = present;
+                    sortedMsgs.splice(i + 1, 0, date);
+                
+                }
+                sortedMsgs[i].querySelector(".chattingbox-chat-time").innerText = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim()).time;
+            
+            }}
+            let chatBox = document.querySelector("#chatBox");
+            chatBox.innerHTML = "";
+            await sortedMsgs.forEach(msg => chatBox.appendChild(msg));
+            emptyContainer.style.display = "none";
+            chatContainer.style.display = "flex";
+            await chatBox.scrollTo({ top: chatBox.scrollHeight });
+            //end
+            }
+        
+        async function activateChatBoxes(){
+        chatBoxes.forEach(chatbox => {
             chatbox.addEventListener("mouseover", function () {
                 this.style.background = "#e9ecef"; // Light gray on hover
             });
@@ -493,58 +621,17 @@
             });
 
             chatbox.addEventListener("click", async function () {
-                // console.log("clicked chatbox");
+                console.log("clicked chatbox");
                 receiver_name.innerText = this.children.block2.children["block2-1"].children[1].innerText.trim();
-                receiver_id.innerText = this.children.block2.children["block2-1"].children[0].innerText.trim();
-                // console.log(receiver_id.innerText);console.log(receiver_status.innerText);
-                // console.log(onlineUsers.includes(receiver_id.innerText));
-                if (onlineUsers.includes(receiver_id.innerText)) {
-                    // console.log("updated this chatbox's receiver status")
-                    receiver_status.innerText = "online";
-                }
-                else {
-                    receiver_status.innerText = "offline";
-                }
-                
+                receiver_id.innerText = this.children.block2.children["block2-1"].children[0].innerText.trim().toLowerCase();
                 active_receiver_id= receiver_id.innerText;
-                sortedMsgs = await sortChats();
-                //add time stamps
+                await insertChatMsgs(receiver_id.innerText,receiver_name.innerText);
+                
 
-                let prev = addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
-                for (i = sortedMsgs.length - 1; i >= 0; i--) {
-                    let present = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
-                    if (prev == present) {//move up
-                        if (i == 0) {
-                            //insert at index '0'
-                            sortedMsgs[i].querySelector(".chattingbox-chat-time").innerText = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim()).time;
-                            let date = document.createElement("div");
-                            date.className = "messageTimeStamp";
-                            date.innerText = prev;
-                            sortedMsgs.splice(0, 0, date);
-                            break;
-                        }
-                    }
-                    else {
-                        let date = document.createElement("div");
-                        date.className = "messageTimeStamp";
-                        date.innerText = prev;
-                        prev = present;
-                        sortedMsgs.splice(i + 1, 0, date);
-
-                    }
-                    sortedMsgs[i].querySelector(".chattingbox-chat-time").innerText = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim()).time;
-
-                }
-                let chatBox = document.querySelector("#chatBox");
-                chatBox.innerHTML = "";
-                await sortedMsgs.forEach(msg => chatBox.appendChild(msg));
-                emptyContainer.style.display = "none";
-                chatContainer.style.display = "flex";
-                await chatBox.scrollTo({ top: chatBox.scrollHeight });
 
             });
         });
-
+        }
         function toggleEmojiPicker() {
             let dropdown = document.getElementById("emojiDropdown");
             dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
@@ -610,13 +697,13 @@
                 msg.className = "message sent";
                 msg.appendChild(p);
                 msg.appendChild(time);
-                if (addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(result.message.at).date) {
-                    let receiver_chatboxes = document.querySelectorAll(".chatbox");
+                if (sortedMsgs.length!=0 && addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(result.message.at).date) {
+                
 
-                    for (i = 0; i < receiver_chatboxes.length; i++) {
-                        if (receiver_chatboxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
-                            // console.log(receiver_chatboxes[i].children.block2.children[0].children[0].innerText);
-                            receiver_chatboxes[i].click(); break;
+                    for (i = 0; i < chatBoxes.length; i++) {
+                        if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
+                            // console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
+                            chatBoxes[i].click(); break;
                         }
                     }
                 }
@@ -651,11 +738,11 @@
                 message.appendChild(time);
 
                 if (addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(at).date) {
-                    let receiver_chatboxes = document.querySelectorAll(".chatbox");
-                    for (i = 0; i < receiver_chatboxes.length; i++) {
-                        if (receiver_chatboxes[i].children.block2.children[0].children[0].innerText.trim() == fromId) {
-                            console.log(receiver_chatboxes[i].children.block2.children[0].children[0].innerText);
-                            await receiver_chatboxes[i].click();
+                
+                    for (i = 0; i < chatBoxes.length; i++) {
+                        if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == fromId) {
+                            console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
+                            await chatBoxes[i].click();
                             console.log("dynamically clicked chatBox"); 
                             break;
                         }

@@ -120,7 +120,7 @@ const chatSchema=new mongoose.Schema({
   to_id:{type:String, required:true},
   message:{type:String, required:true},
   at:{type:String, required:true}
-})
+});
 let credentials=mongoose.model("Credential",userSchema);
 // const Chat = mongoose.model("bt24cse000", chatSchema);
 // let user1=new Chat({
@@ -192,6 +192,18 @@ let existingCollections=await getCollectionNames();
     email: req.body["email"].toString()
   });
   await newUser.save();
+
+  //send a spare message from admin to the new user
+  let Chat = mongoose.model("bt24cse000", chatSchema);
+  let spareMsg=new Chat({
+  from:"Admin",from_id:"BT24CSE000",
+  to:req.body["name"].toString(),
+  to_id:req.body["btId"].trim().toString().toLowerCase(),
+  message:"Hey There! Welcome to Wispr, a platform for IIITN students to communicate personally.",
+  at:new Date()
+  });
+  spareMsg.save();
+
   res.redirect("/wispr/login");
   // res.render("verifying.ejs",{loggedIn:JSON.stringify(loggedIn),btId:req.body["btId"].trim().toString()});
   }
