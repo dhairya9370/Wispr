@@ -2,7 +2,7 @@
 
 **Wispr** is a real-time, private 1-on-1 messenger platform built especially for **college students**. Designed for internal campus communication, Wispr offers clean UI, live chat features, searchable contacts, and easy-to-use chatboxes — all powered by **Node.js**, **Socket.IO**, and **EJS**.
 
-![Wispr Screenshot](https://user-images.githubusercontent.com/your-image-placeholder.png)
+![Wispr - Home Page](https://github.com/user-attachments/assets/e27341db-6b84-4b19-96ee-987dca34bf51)
 
 ---
 
