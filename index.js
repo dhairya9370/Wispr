@@ -268,9 +268,22 @@ app.post("/api/getAllMessages", async (req, res) => {
     res.json({ success: true,sent : sentChats, received : received_messages,allMessages: allMsgs,loggedIn:loggedIn });
 }});
 
-app.use((req, res) => {
-  res.status(404).render("notFound"); // Assuming you have a 404.ejs or 404.html
+// app.use((req, res) => {
+//   res.status(404).render("notFound"); // Assuming you have a 404.ejs or 404.html
+// });
+app.use((req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  if (ip.startsWith('::ffff:192.168.111.')) {
+    next();
+  } else {
+    res.status(403).render("notFound");;
+  }
 });
-server.listen(3000,(req,res)=>{
-  console.log("wispr on port 3000");
+
+// server.listen(3000,(req,res)=>{
+//   console.log("wispr on port 3000");
+// });
+server.listen(3000, '0.0.0.0', () => {
+  console.log("Wispr server running on port 3000");
 });
+

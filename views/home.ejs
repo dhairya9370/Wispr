@@ -165,10 +165,10 @@
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script >
-        let newId='<%=btId%>';
+        let loggedIn='<%=btId%>';
         let chatBoxes= document.querySelectorAll(".chatbox");
         const socket = io("http://localhost:3000");
-        socket.emit("userOnline",newId);
+        socket.emit("userOnline",loggedIn);
         let onlineUsers=[];
         socket.on("updateOnlineStatus", (onlineIds) => {
             // console.log(onlineIds);
@@ -177,7 +177,7 @@
         });
 
         // socket.off("userOnline");
-        // socket.emit("newUserOnline",newId);
+        // socket.emit("newUserOnline",loggedIn);
         //sidebar
         let btns = document.querySelectorAll(".icons");
         let gear = document.getElementById("gear");
@@ -230,7 +230,9 @@
         let chatList=document.querySelector("#chat-list");
         let searchListDiv=document.querySelector("#searched-list");
         let allIds_names=[];
+        
         allIds_names=JSON.parse('<%- ids_names %>');
+        // allIds_names=='<%= ids_names %>';
         let search = document.querySelector("#search");
 
         search.addEventListener("input",async ()=>{
@@ -247,7 +249,7 @@
                     searchListDiv.classList.remove("empty");
                     searchListDiv.classList.add("filled");}
                 for(user of allIds_names){
-                    if(user["btId"]!=newId && (user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase()))){
+                    if(user["btId"]!=loggedIn && (user["name"].toLowerCase().includes(search.value.trim().toString().toLowerCase()) || user["btId"].toLowerCase().includes(search.value.trim().toString().toLowerCase()))){
                         searchListDiv.innerHTML+=`<div class="chatbox searched">
                             <div id="DPblock">
                                 <div class="photo"><img src="/defaultDP.jpg"></div>
@@ -379,7 +381,8 @@
         let receiver_id = document.querySelector("#receiver-id");
         let receiver_status = document.querySelector("#receiver-status");
         let sortedMsgs = [];
-        let loggedIn=JSON.parse('<%-Id%>');
+        
+        // console.log(loggedIn);
         let active_receiver_id="";
 
         async function sortChats() {
@@ -724,7 +727,7 @@
                     chatBox.appendChild(msg);//on sender's system
                     chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
                 }}
-                else if(sortedMsgs.length==0){
+                else{
                     console.log("New User Has No chats ",result.message.at);
                     console.log(addTimeStampsInChats(result.message.at).date);
                     let date = document.createElement("div");
@@ -733,7 +736,7 @@
                     chatBox.appendChild(date);
                     chatBox.appendChild(msg);//on sender's system
                     sortChats();
-                    // console.log(active_receiver_id);
+                    // console.log(sortedMsgs);
                     chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
                 }
                 
