@@ -43,7 +43,7 @@ const onlineUsers = new Map();
 let active_receiver="";
  let now;
 io.on("connection", (socket) => {
-  console.log("New User Connected:", socket.id);
+  // console.log("New User Connected:", socket.id);
   
   // Store user on connection
   socket.on("userOnline", (btId) => {

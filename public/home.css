@@ -428,13 +428,13 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        background-color:rgb(159, 197, 208);
+        background-color:rgba(159, 197, 208, 0.635);
         padding: 13px 12px;
-        border-radius: 10px;
+        border-radius: 8px;
         position: relative; 
         align-self: center;
-        margin-top: 20px;
-        margin-bottom: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
 
         }
         .chattingbox-chat-time {

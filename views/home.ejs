@@ -49,7 +49,7 @@
             <div id="heading">CHATS</div>
             <div id="searchbar">
                 <i class="ph ph-magnifying-glass"></i>
-                <input type="text" id="search" placeholder="Search or start a new chat">
+                <input type="text" id="search" placeholder="Search by name or ID">
 
             </div>
             <div id="chat-list">
@@ -234,6 +234,11 @@
         let search = document.querySelector("#search");
 
         search.addEventListener("input",async ()=>{
+            if(searchListDiv.innerHTML.toString().trim()==""){
+                    searchListDiv.classList.remove("filled");
+                    searchListDiv.classList.add("empty");
+                }
+            // console.log(searchListDiv.classList);
             searchListDiv.innerHTML="";
             searchListDiv.classList.add("active");
             chatList.classList.add("inactive");
@@ -256,6 +261,7 @@
                                 </div>
                             </div>
                         </div>`;
+                        console.log(user);
                         await document.querySelectorAll(".searched").forEach((box)=>{
 
                         box.addEventListener("mouseover", function () {
@@ -279,8 +285,8 @@
                             let name=box.querySelector("#name").innerText.toString().trim();
                             let toId=box.querySelector("#searched_id").innerText.toString().trim().toLowerCase();
                             let newChatBox=document.createElement("div");
-                            newChatBox.innerHTML=`<div class="chatbox">
-                                            <div id="DPblock">
+                            newChatBox.className="chatbox";
+                            newChatBox.innerHTML=`<div id="DPblock">
                                                 <div class="photo"><img src="/defaultDP.jpg"></div>
                                             </div>
                                             <div id="block2">
@@ -292,50 +298,62 @@
                                                 <div id="block2-2">
                                                     <div id="recent-chat"></div>
                                                 </div>
-                                            </div>
-                                        </div>`;
-                                        active_receiver_id=toId;
+                                            </div>`;
+                        // active_receiver_id=toId;
 
-
-                                        let present=false;let presentAtIdx;
-                                        for(i=0;i<chatBoxes.length;i++){
-                                               if(chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId){
-                                                presentAtIdx=i;
-                                                present=true;
-                                                break;
-                                               }
-                                        }
+                        let present=false;let presentAtIdx=0;
+                        for(i=0;i<chatBoxes.length;i++){
+                               if(chatBoxes[i].children.block2.children[0].children[0].innerText.toLowerCase().trim() == toId){
+                                presentAtIdx=i;
+                                present=true;
+                                break;
+                               }
+                        }
                         if(!present){
                             
-                            chatBoxes= document.querySelectorAll(".chatbox");//reload chatboxes
-                            closeSearchList();
-                            chatList.appendChild(newChatBox);
+                            // console.log(user,box.classList);
+                            chatBoxes= document.querySelectorAll(".chatbox");
+                            //reload chatboxes
+                            
+                            // box.classList.remove("searched");
+                            // console.log(chatBoxes,box.classList);//not activated chat box
+                            await chatList.appendChild(newChatBox);
+                            chatBoxes= document.querySelectorAll(".chatbox");
+                            
                             await activateChatBoxes();
                             
-                            let lastChatBox = chatBoxes[chatBoxes.length-1];
-                            // console.log(chatBoxes[2]);
-                            lastChatBox.click();//not working
+                            // console.log(chatBoxes[chatBoxes.length-1]);
+                            closeSearchList();
+                            
+                           
+                            let lastChatBox =chatBoxes[chatBoxes.length-1];
+                            lastChatBox.remove();//an unnecessary duplicate chatbox for new user was being created, so removed it on the spot
+                            // console.log(chatList.children[chatList.children.length-1]);
+                            lastChatBox =chatList.children[chatList.children.length-1] ;
+                            // console.log(lastChatBox);
+                            lastChatBox.click();
                             // await insertChatMsgs(toId,name);
                         }else{
                             let alreadyPresent = chatBoxes[presentAtIdx];
                             alreadyPresent.click();
+                            // console.log(searchListDiv.classList);
                         }
-                            // newChatBox.click();
                         });
                     });
                     }
                 }
+                // console.log(searchListDiv.innerHTML.toString().trim()=="");
                 if(searchListDiv.innerHTML.toString().trim()==""){
                     searchListDiv.classList.remove("filled");
                     searchListDiv.classList.add("empty");
                 }
             }else{
+                // console.log(searchListDiv.classList.contains("filled"));
                 if(searchListDiv.classList.contains("filled")){
                     searchListDiv.classList.remove("filled");
                     searchListDiv.classList.add("empty");
                 }
             }
-
 
         });
         document.addEventListener("click",(event)=>{
@@ -351,9 +369,6 @@
                 search.value="";
                 searchListDiv.innerHTML="";
             }
-            
-
-            //debugging
 
             //if()
         
@@ -621,14 +636,11 @@
             });
 
             chatbox.addEventListener("click", async function () {
-                console.log("clicked chatbox");
-                receiver_name.innerText = this.children.block2.children["block2-1"].children[1].innerText.trim();
-                receiver_id.innerText = this.children.block2.children["block2-1"].children[0].innerText.trim().toLowerCase();
+                // console.log("clicked chatbox",chatbox.querySelector("#to_id").innerText.trim().toLowerCase());
+                receiver_name.innerText = chatbox.querySelector("#name").innerText.trim();
+                receiver_id.innerText = chatbox.querySelector("#to_id").innerText.trim().toLowerCase();
                 active_receiver_id= receiver_id.innerText;
                 await insertChatMsgs(receiver_id.innerText,receiver_name.innerText);
-                
-
-
             });
         });
         }
@@ -661,7 +673,6 @@
             }
         });
 
-        // let BTID = JSON.parse('<%- Id %>');
         loggedIn = loggedIn.toString();
         sendBtn.addEventListener("click", async () => {
             const message = messageInput.value.trim(); // Trim whitespace
@@ -697,20 +708,36 @@
                 msg.className = "message sent";
                 msg.appendChild(p);
                 msg.appendChild(time);
-                if (sortedMsgs.length!=0 && addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(result.message.at).date) {
-                
+                if(sortedMsgs.length!=0){
+                    if (addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(result.message.at).date) {
+                    
 
-                    for (i = 0; i < chatBoxes.length; i++) {
-                        if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
-                            // console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
-                            chatBoxes[i].click(); break;
+                        for (i = 0; i < chatBoxes.length; i++) {
+                            if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
+                                // console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
+                                chatBoxes[i].click(); break;
+                            }
                         }
                     }
-                }
+                
                 else {
                     chatBox.appendChild(msg);//on sender's system
                     chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
-                } messageInput.value = ""; messageInput.dispatchEvent(new Event('input'));
+                }}
+                else if(sortedMsgs.length==0){
+                    console.log("New User Has No chats ",result.message.at);
+                    console.log(addTimeStampsInChats(result.message.at).date);
+                    let date = document.createElement("div");
+                    date.className = "messageTimeStamp";
+                    date.innerText=addTimeStampsInChats(result.message.at).date;
+                    chatBox.appendChild(date);
+                    chatBox.appendChild(msg);//on sender's system
+                    sortChats();
+                    // console.log(active_receiver_id);
+                    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+                }
+                
+                messageInput.value = ""; messageInput.dispatchEvent(new Event('input'));
 
 
             } catch (error) {
