@@ -196,7 +196,7 @@ let existingCollections=await getCollectionNames();
   //send a spare message from admin to the new user
   let Chat = mongoose.model("bt24cse000", chatSchema);
   let spareMsg=new Chat({
-  from:"Admin",from_id:"BT24CSE000",
+  from:"Admin",from_id:"bt24cse000",
   to:req.body["name"].toString(),
   to_id:req.body["btId"].trim().toString().toLowerCase(),
   message:"Hey There! Welcome to Wispr, a platform for IIITN students to communicate personally.",
@@ -273,10 +273,10 @@ app.post("/api/getAllMessages", async (req, res) => {
 // });
 app.use((req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress;
-  if (ip.startsWith('::ffff:192.168.111.')) {
+  if (ip.startsWith('::ffff:192.168.')) {
     next();
   } else {
-    res.status(403).render("notFound");;
+    res.render("notFound");;
   }
 });
 

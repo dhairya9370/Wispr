@@ -16,45 +16,47 @@
             <span>Wispr</span>
         </div>
         <div class="right">
-            <i class="ph ph-minus"></i>
-            <i class="ph ph-square"></i>
-            <i class="ph ph-x"></i>
+            <i class="ph ph-minus"></i><!--tab minimizing button -->
+            <i class="ph ph-square"></i><!--tab resize btn-->
+            <i class="ph ph-x"></i><!--tab close button-->
         </div>
     </div>
     <div class="sidebar">
         <div class="icon-container">
-            <div class="icon icons"><i class="ph ph-chat-circle"></i></div>
-            <div class="icon icons"><i class="ph ph-phone"></i></div>
-            <div class="icon icons"><i class="ph ph-circle-notch"></i></div>
+            <div class="icon icons"><i class="ph ph-chat-circle"></i></div><!--chats section btn-->
+            <div class="icon icons"><i class="ph ph-phone"></i></div><!--calls section btn-->
+            <div class="icon icons"><i class="ph ph-circle-notch"></i></div><!--status section btn-->
             <hr>
             <div class="ai">
-                <img src="https://thetechportal.com/wp-content/uploads/2024/06/images-2.jpg">
+                <img src="https://thetechportal.com/wp-content/uploads/2024/06/images-2.jpg"><!--meta AI button-->
             </div>
         </div>
         <div class="icon-container">
-            <div class="icon icons"><i class="ph ph-circle"></i></div>
+            <div class="icon icons"><i class="ph ph-circle"></i></div><!--dummy icon-->
             <hr>
-            <div class="icon icons"><i id="gear" class="ph ph-gear"></i></div>
-            <div id="profile-div-container">
+            <div class="icon icons"><i id="gear" class="ph ph-gear"></i></div><!--settings section btn-->
+            <div id="profile-div-container"><!--profile section btn-->
                 <div id="profile-image"  title="Profile"></div>
-            
             </div>
-            <div id="btId" style="display:none;">
+            <div id="btId" style="display:none;"><!--hidden loggedIn's btId-->
                 <%=btId%>
             </div>
         </div>
     </div>
+    <!--Chats section Container-->
     <div class="container">
+        <!-- receiver's chatboxes list -->
         <div class="pane" id="chat-container">
             <div id="heading">CHATS</div>
             <div id="searchbar">
                 <i class="ph ph-magnifying-glass"></i>
                 <input type="text" id="search" placeholder="Search by name or ID">
-
             </div>
+
             <div id="chat-list">
+                <!-- to sort chatboxes in list as last out first in -->
                 <% chats.sort((a, b) => new Date(b.at) - new Date(a.at));
-                let uniqueReceivers=new Set(); %>
+                let uniqueReceivers=new Set(); %><!--to overcome repeated receiver chatboxes even if loggedIn sender has sent multiple messages to a particular receiver-->
                 <% for (chat of chats) { %>
                     <% if (!uniqueReceivers.has(chat.to_id)) { %>
                         <% if (btId !=chat.to_id) { %>
@@ -131,7 +133,7 @@
                 </div>
                 <!-- Chat Messages -->
                 <div class="chatting-messages-box" id="chatBox">
-                    <div id="timestamp">2-04-2025</div>
+                    <!-- <div id="timestamp"></div> -->
                     <!-- <div class="message received"></div>
                         <div class="message sent"></div> -->
                 </div>
@@ -175,7 +177,6 @@
             onlineUsers=onlineIds;
             checkConnection();
         });
-
         // socket.off("userOnline");
         // socket.emit("newUserOnline",loggedIn);
         //sidebar
@@ -619,6 +620,9 @@
             //end
             }
         
+            document.addEventListener("DOMContentLoaded",async()=>{
+                await activateChatBoxes();
+            })
         async function activateChatBoxes(){
         chatBoxes.forEach(chatbox => {
             chatbox.addEventListener("mouseover", function () {
@@ -679,12 +683,10 @@
         loggedIn = loggedIn.toString();
         sendBtn.addEventListener("click", async () => {
             const message = messageInput.value.trim(); // Trim whitespace
-
             if (!message) {
                 console.error("Message is empty!"); // Debugging output
                 return; // Stop if the message is empty
             }
-
             try {
                 const toId = document.querySelector("#receiver-id").textContent.trim();
                 const fromId = loggedIn;
@@ -704,45 +706,47 @@
                 p.innerText = result.message.message;
                 let time = document.createElement("div");
                 time.className = "chattingbox-chat-time";
-
                 time.innerText = addTimeStampsInChats(result.message.at).time;
-
                 let msg = document.createElement("div");
                 msg.className = "message sent";
                 msg.appendChild(p);
                 msg.appendChild(time);
+
                 if(sortedMsgs.length!=0){
                     if (addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(result.message.at).date) {
-                    
-
+                        //message today after some day(s)
                         for (i = 0; i < chatBoxes.length; i++) {
                             if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
                                 // console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
                                 chatBoxes[i].click(); break;
                             }
                         }
+
                     }
-                
-                else {
+                else {//todays new message
                     chatBox.appendChild(msg);//on sender's system
-                    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+                    
                 }}
                 else{
-                    console.log("New User Has No chats ",result.message.at);
-                    console.log(addTimeStampsInChats(result.message.at).date);
-                    let date = document.createElement("div");
-                    date.className = "messageTimeStamp";
-                    date.innerText=addTimeStampsInChats(result.message.at).date;
-                    chatBox.appendChild(date);
-                    chatBox.appendChild(msg);//on sender's system
-                    sortChats();
+                    // console.log("New User Has No chats ",result.message.at);
+                    // console.log(addTimeStampsInChats(result.message.at).date);
+                    // let date = document.createElement("div");
+                    // date.className = "messageTimeStamp";
+                    // date.innerText=addTimeStampsInChats(result.message.at).date;
+                    // chatBox.appendChild(date);
+                    // chatBox.appendChild(msg);//on sender's system
+                    // sortChats();
                     // console.log(sortedMsgs);
-                    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+                    for (i = 0; i < chatBoxes.length; i++) {
+                            if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
+                                // console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
+                                chatBoxes[i].click(); break;
+                            }
+                        }
+                    
                 }
-                
+                chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
                 messageInput.value = ""; messageInput.dispatchEvent(new Event('input'));
-
-
             } catch (error) {
                 console.error("Error sending message:", error); // Debugging output
             }
@@ -753,35 +757,39 @@
                 document.getElementById("sendBtn").click(); // Trigger button click
             }
         });
-        
+    
         socket.on("receiveMessage", async ({msg,fromId,at})=>{
             if(fromId==active_receiver_id){
-                // console.log("received message :",msg,"fromId: ",fromId,"at:",at);
+                sortedMsgs = await sortChats();
+                // console.log(sortedMsgs);
                 let p = document.createElement("p");
-                p.innerText = msg.toString();
-                let time = document.createElement("div");
-                time.className = "chattingbox-chat-time";
-                time.innerText =addTimeStampsInChats(at).time;
-                let message = document.createElement("div");
-                message.className = "message received";
-                message.appendChild(p);
-                message.appendChild(time);
+                    p.innerText = msg.toString();
+                    let time = document.createElement("div");
+                    time.className = "chattingbox-chat-time";
+                    time.innerText =addTimeStampsInChats(at).time;
+                    let message = document.createElement("div");
+                    message.className = "message received";
+                    message.appendChild(p);
+                    message.appendChild(time);
+                    // console.log("last message was : ",addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText).date);
+                    // console.log(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText);
 
-                if (addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(at).date) {
-                
-                    for (i = 0; i < chatBoxes.length; i++) {
-                        if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == fromId) {
-                            console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
-                            await chatBoxes[i].click();
-                            console.log("dynamically clicked chatBox"); 
-                            break;
-                        }
-                    }
+                if(sortedMsgs.length-1==0 || (sortedMsgs.length!=0 && addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(at).date)){
+                    let date = document.createElement("div");
+                    date.className = "messageTimeStamp";
+                    date.innerText = "today";
+                    chatBox.appendChild(date);
+                    chatBox.appendChild(message);
+                    
                 }
+                // // // if[addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date = addTimeStampsInChats(at).date]
                 else{
-                chatBox.appendChild(message);
-                chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+                    //because today sender have messaged this receiver before also!
+                    
+                    chatBox.appendChild(message);
                 }
+                chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
+
             }
         });
 
