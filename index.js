@@ -27,7 +27,12 @@ console.log("MongoDB Connection Established.")
 .catch(err => console.log(err));
 
 async function main() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/wispr');
+  // await mongoose.connect('mongodb://127.0.0.1:27017/wispr');
+  await mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  });
+
 }
 const { Server } = require("socket.io");
 const io=new Server(server
