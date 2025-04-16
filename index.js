@@ -25,24 +25,51 @@ main().then((res)=>{
 console.log("MongoDB Connection Established.")
 })
 .catch(err => console.log(err));
-
+// Updated connection code
 async function main() {
-  // await mongoose.connect('mongodb://127.0.0.1:27017/wispr');
-  await mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  });
-
+  try {
+    const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wispr';
+    await mongoose.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 30000
+    });
+    console.log('MongoDB connected to:', mongoose.connection.host);
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    // Implement retry logic or fallback
+    process.exit(1);
+  }
 }
+
+// Add connection event listeners
+mongoose.connection.on('connected', () => {
+  console.log('Mongoose connected to DB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('Mongoose connection error:', err);
+});
+// async function main() {
+//   // await mongoose.connect('mongodb://127.0.0.1:27017/wispr');
+//   await mongoose.connect(process.env.MONGODB_URI, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true
+//   });
+
+// }
+
 const { Server } = require("socket.io");
-const io=new Server(server
+const io = new Server(server);
+// const io=new Server(server
 //   ,{
 //   cors: {
 //     origin: "*", // Allow all origins (use specific origins in production)
 //     methods: ["GET", "POST"],
 //   },
 // }
-);
+// );
 
 const onlineUsers = new Map();
 let active_receiver="";
@@ -288,6 +315,13 @@ app.use((req, res, next) => {
 // server.listen(3000,(req,res)=>{
 //   console.log("wispr on port 3000");
 // });
+// Remove this entire block:
+// server.listen(3000, '0.0.0.0', () => {
+//   console.log("Wispr server running on port 3000");
+// });
+
+// Replace with Vercel-compatible export:
+module.exports = app;
 server.listen(3000, '0.0.0.0', () => {
   console.log("Wispr server running on port 3000");
 });
