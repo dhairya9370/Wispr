@@ -7,6 +7,19 @@
     <title>WhatsApp Web - Light Mode</title>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="/home.css">
+    <style>
+    #rightClickMenu {
+        cursor: pointer;
+        position: absolute;
+        display: none;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        padding: 10px;
+        z-index: 9999;
+        border-radius: 8px;
+      }
+    </style>
 </head>
 
 <body>
@@ -99,7 +112,10 @@
                         <% } %>
                     <% } %>
                 <% } %>
+
             </div>
+            <div id="rightClickMenu">Delete This Chat</div>
+
             <div id="searched-list" class="empty"></div>
         </div>
         <div class="resizer" id="resizer"></div>
@@ -264,7 +280,7 @@
                                 </div>
                             </div>
                         </div>`;
-                        console.log(user);
+                        // console.log(user);
                         await document.querySelectorAll(".searched").forEach((box)=>{
 
                         box.addEventListener("mouseover", function () {
@@ -335,7 +351,7 @@
                             lastChatBox =chatList.children[chatList.children.length-1] ;
                             // console.log(lastChatBox);
                             lastChatBox.click();
-                            // await insertChatMsgs(toId,name);
+                            
                         }else{
                             let alreadyPresent = chatBoxes[presentAtIdx];
                             alreadyPresent.click();
@@ -426,7 +442,6 @@
                     message.appendChild(p);
                     message.appendChild(time);
                     sentUnsorted.push(message);
-
                 }
             }
             let unsorted = receivedUnsorted.concat(sentUnsorted);
@@ -436,8 +451,12 @@
                 let timeB = new Date(b.querySelector(".chattingbox-chat-time").textContent.trim());
                 return timeA - timeB;
             });
-           
-            return sortedMsgs;
+            let sortedWithoutTimeStamps=[];
+            if(sortedMsgs.length!=0){
+                sortedWithoutTimeStamps = [...sortedMsgs];
+                return  [...sortedMsgs];
+            }
+            else{return [...sortedWithoutTimeStamps];}
         }}
 
         //recent chat, recent chat time, for chat list's chat boxes
@@ -582,21 +601,28 @@
             else{
                 receiver_status.innerText = "offline";
             }
-
-            sortedMsgs = await sortChats();
+            let sortedMsgs2=[];
+            // await  console.log("sortedMsgs2",sortedMsgs2);
+            sortedMsgs2 =await sortChats();
+            // .then(async()=>{
+                sortedMsgs2=[...sortedMsgs2];
+            // console.log("sortedMsgs2",sortedMsgs2);
             //add time stamps
-            if(sortedMsgs.length!=0){
-            let prev = addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
-            for (i = sortedMsgs.length - 1; i >= 0; i--) {
-                let present = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
+            let prev ="";
+            if(sortedMsgs2.length!=0){
+            prev = addTimeStampsInChats(sortedMsgs2[sortedMsgs2.length - 1].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
+            for (i = sortedMsgs2.length - 1; i >= 0; i--) {
+                let present = addTimeStampsInChats(sortedMsgs2[i].querySelector(".chattingbox-chat-time").textContent.trim().toString()).date;
                 if (prev == present) {//move up
                     if (i == 0) {
                         //insert at index '0'
-                        sortedMsgs[i].querySelector(".chattingbox-chat-time").innerText = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim()).time;
+                        // console.log(prev,sortedMsgs2[0].querySelector(".chattingbox-chat-time").textContent.trim());
+                        sortedMsgs2[i].querySelector(".chattingbox-chat-time").innerText = addTimeStampsInChats(sortedMsgs2[i].querySelector(".chattingbox-chat-time").textContent.trim()).time;
                         let date = document.createElement("div");
                         date.className = "messageTimeStamp";
                         date.innerText = prev;
-                        sortedMsgs.splice(0, 0, date);
+                        
+                        sortedMsgs2.splice(0, 0, date);
                         break;
                     }
                 }
@@ -605,24 +631,46 @@
                     date.className = "messageTimeStamp";
                     date.innerText = prev;
                     prev = present;
-                    sortedMsgs.splice(i + 1, 0, date);
-                
+                    sortedMsgs2.splice(i + 1, 0, date);
                 }
-                sortedMsgs[i].querySelector(".chattingbox-chat-time").innerText = addTimeStampsInChats(sortedMsgs[i].querySelector(".chattingbox-chat-time").textContent.trim()).time;
-            
+                sortedMsgs2[i].querySelector(".chattingbox-chat-time").innerText = addTimeStampsInChats(sortedMsgs2[i].querySelector(".chattingbox-chat-time").textContent.trim()).time;
             }}
             let chatBox = document.querySelector("#chatBox");
             chatBox.innerHTML = "";
-            await sortedMsgs.forEach(msg => chatBox.appendChild(msg));
+            // console.log("added Time Stamps:",sortedMsgs2);
+            if(sortedMsgs2[0].className!="messageTimeStamp"){
+                let date = document.createElement("div");
+                        date.className = "messageTimeStamp";
+                        date.innerText = prev;
+                        sortedMsgs2.splice(0, 0, date);
+            }
+            await sortedMsgs2.forEach(msg => chatBox.appendChild(msg));
             emptyContainer.style.display = "none";
             chatContainer.style.display = "flex";
+            // console.log(sortedMsgs2[0]);
+            
             await chatBox.scrollTo({ top: chatBox.scrollHeight });
+            // console.log("sortedMsgs2",sortedMsgs2,"sortedMsgs",sortedMsgs);
             //end
+        // });
             }
         
-            document.addEventListener("DOMContentLoaded",async()=>{
-                await activateChatBoxes();
-            })
+        const rightClickMenu = document.getElementById('rightClickMenu');
+        rightClickMenu.addEventListener('click', () => {
+          alert("Do u Want to Delete Chat?");
+          rightClickMenu.style.display = 'none';
+        });
+        document.addEventListener('click', (e) => {
+          if (!rightClickMenu.contains(e.target)) {
+            rightClickMenu.style.display = 'none';
+          }
+        });
+        document.addEventListener("DOMContentLoaded",async()=>{
+
+            await activateChatBoxes();
+            setTimeout(async()=>{console.log(await sortChats())},5000);
+        });
+        
         async function activateChatBoxes(){
         chatBoxes.forEach(chatbox => {
             chatbox.addEventListener("mouseover", function () {
@@ -649,8 +697,17 @@
                 active_receiver_id= receiver_id.innerText;
                 await insertChatMsgs(receiver_id.innerText,receiver_name.innerText);
             });
+            
+            chatbox.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                rightClickMenu.style.display = 'block';
+                rightClickMenu.style.left = `${e.pageX}px`;
+                rightClickMenu.style.top = `${e.pageY}px`;
+            });
+            
         });
         }
+        
         function toggleEmojiPicker() {
             let dropdown = document.getElementById("emojiDropdown");
             dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
@@ -699,7 +756,7 @@
                 if(onlineUsers.includes(toId)){
                     //display dynamically the message in the online receiver's chatbox
                     socket.emit("sendMessage",{fromId:fromId,msg:message,toId:toId,at:result.message.at});
-                };
+                }
                 // await console.log(result.message.message);
                 let chatBox = document.querySelector("#chatBox");
                 let p = document.createElement("p");
@@ -711,43 +768,43 @@
                 msg.className = "message sent";
                 msg.appendChild(p);
                 msg.appendChild(time);
-
-                if(sortedMsgs.length!=0){
-                    if (addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(result.message.at).date) {
-                        //message today after some day(s)
-                        for (i = 0; i < chatBoxes.length; i++) {
-                            if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
-                                // console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
-                                chatBoxes[i].click(); break;
-                            }
+                sortedMsgs=await sortChats();
+                // console.log("Sorted Msgs on Clicking Send Btn : ",sortedMsgs);
+                if(sortedMsgs.length-1!=0){//means previous sortedMsgs.length != 0, means sender had chatted with the receiver before also
+                    // console.log(addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText).date,addTimeStampsInChats(result.message.at).date);
+                    // console.log(addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date == addTimeStampsInChats(result.message.at).date);
+                    if(sortedMsgs.length>1){
+                        if (addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(result.message.at).date) {
+                            //message today after some day(s)
+                            let date = document.createElement("div");
+                            date.className = "messageTimeStamp";
+                            date.innerText = "Today";
+                            chatBox.appendChild(date);
+                            chatBox.appendChild(msg);
                         }
+                        else if(addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText).date == addTimeStampsInChats(result.message.at).date){
+                            //today's next message (not First!)
+                            chatBox.appendChild(msg);//on sender's system
 
+                    }}else if(sortedMsgs.length==1){
+                        //the recently sent message is the first message with the receiver!
+                        let date = document.createElement("div");
+                        date.className = "messageTimeStamp";
+                        date.innerText = "Today";
+                        chatBox.appendChild(date);
+                        chatBox.appendChild(msg);
                     }
-                else {//todays new message
-                    chatBox.appendChild(msg);//on sender's system
-                    
-                }}
+            }
                 else{
-                    // console.log("New User Has No chats ",result.message.at);
-                    // console.log(addTimeStampsInChats(result.message.at).date);
-                    // let date = document.createElement("div");
-                    // date.className = "messageTimeStamp";
-                    // date.innerText=addTimeStampsInChats(result.message.at).date;
-                    // chatBox.appendChild(date);
-                    // chatBox.appendChild(msg);//on sender's system
-                    // sortChats();
-                    // console.log(sortedMsgs);
-                    for (i = 0; i < chatBoxes.length; i++) {
-                            if (chatBoxes[i].children.block2.children[0].children[0].innerText.trim() == toId) {
-                                // console.log(chatBoxes[i].children.block2.children[0].children[0].innerText);
-                                chatBoxes[i].click(); break;
-                            }
-                        }
-                    
+                    let date = document.createElement("div");
+                    date.className = "messageTimeStamp";
+                    date.innerText = "Today";
+                    chatBox.appendChild(date);
+                    chatBox.appendChild(msg);
                 }
                 chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
                 messageInput.value = ""; messageInput.dispatchEvent(new Event('input'));
-            } catch (error) {
+            }catch (error) {
                 console.error("Error sending message:", error); // Debugging output
             }
         });
@@ -777,7 +834,7 @@
                 if(sortedMsgs.length-1==0 || (sortedMsgs.length!=0 && addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText).date != addTimeStampsInChats(at).date)){
                     let date = document.createElement("div");
                     date.className = "messageTimeStamp";
-                    date.innerText = "today";
+                    date.innerText = "Today";
                     chatBox.appendChild(date);
                     chatBox.appendChild(message);
                     
@@ -785,11 +842,9 @@
                 // // // if[addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 1].querySelector(".chattingbox-chat-time").innerText).date = addTimeStampsInChats(at).date]
                 else{
                     //because today sender have messaged this receiver before also!
-                    
                     chatBox.appendChild(message);
                 }
                 chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
-
             }
         });
 
