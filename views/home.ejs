@@ -7,6 +7,10 @@
     <title>WhatsApp Web - Light Mode</title>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="/home.css">
+    <!-- Bootstrap 5 CSS -->
+<!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+
+
     <style>
     #rightClickMenu {
         cursor: pointer;
@@ -18,6 +22,17 @@
         padding: 10px;
         z-index: 9999;
         border-radius: 8px;
+        padding:8px;
+      }
+
+      .btn-danger{
+        margin:4px;
+        padding:4px;
+        width:100%;
+        background-color: rgb(237, 98, 98);
+        color:white;
+        border-radius: 7px;
+
       }
     </style>
 </head>
@@ -57,7 +72,7 @@
         </div>
     </div>
     <!--Chats section Container-->
-    <div class="container">
+    <div class="container w-100 mx-0">
         <!-- receiver's chatboxes list -->
         <div class="pane" id="chat-container">
             <div id="heading">CHATS</div>
@@ -114,7 +129,10 @@
                 <% } %>
 
             </div>
-            <div id="rightClickMenu">Delete This Chat</div>
+            <div id="rightClickMenu">
+                <div id="deleteForSender" class="btn-danger">Delete for me</div>
+                <div id="deleteForBoth" class="btn-danger">Delete for everyone</div>
+            </div>
 
             <div id="searched-list" class="empty"></div>
         </div>
@@ -181,6 +199,7 @@
             </div>
         </div>
     </div>
+    
     <script src="/socket.io/socket.io.js"></script>
     <script >
         let loggedIn='<%=btId%>';
@@ -389,8 +408,6 @@
                 searchListDiv.innerHTML="";
             }
 
-            //if()
-        
         let chatContainer = document.querySelector(".chatting-container");
         chatContainer.style.display = "none";//empty
         let emptyContainer = document.querySelector("#empty-chat-window-container");
@@ -398,7 +415,7 @@
         let receiver_id = document.querySelector("#receiver-id");
         let receiver_status = document.querySelector("#receiver-status");
         let sortedMsgs = [];
-        
+        let messageInput = document.querySelector("#messageInput");
         // console.log(loggedIn);
         let active_receiver_id="";
 
@@ -638,7 +655,7 @@
             let chatBox = document.querySelector("#chatBox");
             chatBox.innerHTML = "";
             // console.log("added Time Stamps:",sortedMsgs2);
-            if(sortedMsgs2[0].className!="messageTimeStamp"){
+            if(sortedMsgs.length!=0 && sortedMsgs2[0].className!="messageTimeStamp"){
                 let date = document.createElement("div");
                         date.className = "messageTimeStamp";
                         date.innerText = prev;
@@ -656,10 +673,18 @@
             }
         
         const rightClickMenu = document.getElementById('rightClickMenu');
-        rightClickMenu.addEventListener('click', () => {
-          alert("Do u Want to Delete Chat?");
+        const deleteForSender=rightClickMenu.querySelector("#deleteForSender");
+        const deleteForBoth=rightClickMenu.querySelector("#deleteForBoth");
+
+        deleteForSender.addEventListener('click', () => {
+          alert("Do u Want to Delete This Message For U?");
           rightClickMenu.style.display = 'none';
         });
+        deleteForBoth.addEventListener('click', () => {
+          alert("Do u Want to Delete This Message For Both?");
+          rightClickMenu.style.display = 'none';
+        });
+        // messages.addEventListener("")
         document.addEventListener('click', (e) => {
           if (!rightClickMenu.contains(e.target)) {
             rightClickMenu.style.display = 'none';
@@ -668,44 +693,57 @@
         document.addEventListener("DOMContentLoaded",async()=>{
 
             await activateChatBoxes();
-            setTimeout(async()=>{console.log(await sortChats())},5000);
+            // setTimeout(async()=>{console.log(await sortChats())},5000);
         });
-        
+        function applyDeleteEventListenerOnMsgs(){
+            const messages =document.querySelectorAll(".message");
+                messages.forEach((msg)=>{
+                    msg.addEventListener("contextmenu", (e) => {
+                        e.preventDefault();
+                        rightClickMenu.style.display = 'block';
+                        rightClickMenu.style.left = `${e.pageX}px`;
+                        rightClickMenu.style.top = `${e.pageY}px`;
+                    });
+                });
+        }
         async function activateChatBoxes(){
-        chatBoxes.forEach(chatbox => {
-            chatbox.addEventListener("mouseover", function () {
+            chatBoxes.forEach(chatbox => {
+                chatbox.addEventListener("mouseover", function () {
                 this.style.background = "#e9ecef"; // Light gray on hover
             });
-
-            chatbox.addEventListener("mouseout", function () {
+            
+                chatbox.addEventListener("mouseout", function () {
                 this.style.background = ""; // Reset background on hover out
             });
-
-            chatbox.addEventListener("mousedown", function () {
+            
+                chatbox.addEventListener("mousedown", function () {
                 this.style.background = "#d6d8db";
 
             });
-
-            chatbox.addEventListener("mouseup", function () {
+            
+                chatbox.addEventListener("mouseup", function () {
                 this.style.background = "#e9ecef"; // Back to hover color after release
             });
-
-            chatbox.addEventListener("click", async function () {
-                // console.log("clicked chatbox",chatbox.querySelector("#to_id").innerText.trim().toLowerCase());
-                receiver_name.innerText = chatbox.querySelector("#name").innerText.trim();
-                receiver_id.innerText = chatbox.querySelector("#to_id").innerText.trim().toLowerCase();
-                active_receiver_id= receiver_id.innerText;
-                await insertChatMsgs(receiver_id.innerText,receiver_name.innerText);
-            });
             
-            chatbox.addEventListener("contextmenu", (e) => {
-                e.preventDefault();
-                rightClickMenu.style.display = 'block';
-                rightClickMenu.style.left = `${e.pageX}px`;
-                rightClickMenu.style.top = `${e.pageY}px`;
+                chatbox.addEventListener("click", async function () {
+                    // console.log("clicked chatbox",chatbox.querySelector("#to_id").innerText.trim().toLowerCase());
+                    receiver_name.innerText = chatbox.querySelector("#name").innerText.trim();
+                    receiver_id.innerText = chatbox.querySelector("#to_id").innerText.trim().toLowerCase();
+                    active_receiver_id= receiver_id.innerText;
+                    await insertChatMsgs(receiver_id.innerText,receiver_name.innerText);
+                    applyDeleteEventListenerOnMsgs();
+                    messageInput.value = ""; messageInput.dispatchEvent(new Event('input'));
+                    
+                });
+                
+                // chatbox.addEventListener("contextmenu", (e) => {
+                //     e.preventDefault();
+                //     rightClickMenu.style.display = 'block';
+                //     rightClickMenu.style.left = `${e.pageX}px`;
+                //     rightClickMenu.style.top = `${e.pageY}px`;
+                // });
+                
             });
-            
-        });
         }
         
         function toggleEmojiPicker() {
@@ -723,7 +761,7 @@
                 emojiDropdown.style.display = "none"; // Dropdown close karega
             }
         }
-        let messageInput = document.querySelector("#messageInput");
+        
         let sendBtn = document.querySelector("#sendBtn");
         let voiceBtn = document.querySelector("#voiceBtn");
         sendBtn.style.display = "none";
