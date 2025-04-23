@@ -27,20 +27,22 @@ console.log("MongoDB Connection Established.")
 .catch(err => console.log(err));
 // Updated connection code
 async function main() {
-  try {
-    const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wispr';
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 30000
-    });
-    console.log('MongoDB connected to:', mongoose.connection.host);
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    // Implement retry logic or fallback
-    process.exit(1);
-  }
+  // try {
+  //   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/wispr';
+  //   await mongoose.connect(uri, {
+  //     useNewUrlParser: true,
+  //     useUnifiedTopology: true,
+  //     serverSelectionTimeoutMS: 5000,
+  //     socketTimeoutMS: 30000
+  //   });
+  //   console.log('MongoDB connected to:', mongoose.connection.host);
+  // } catch (err) {
+  //   console.error('MongoDB connection error:', err);
+  //   // Implement retry logic or fallback
+  //   process.exit(1);
+  // }
+    await mongoose.connect('mongodb://127.0.0.1:27017/wispr');
+  
 }
 
 // Add connection event listeners
@@ -61,15 +63,14 @@ mongoose.connection.on('error', (err) => {
 // }
 
 const { Server } = require("socket.io");
-const io = new Server(server);
-// const io=new Server(server
-//   ,{
-//   cors: {
-//     origin: "*", // Allow all origins (use specific origins in production)
-//     methods: ["GET", "POST"],
-//   },
-// }
-// );
+// const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin:["http://localhost:3000"],
+    methods: ["GET", "POST"]
+  },
+  // path: "/wispr"
+});
 
 const onlineUsers = new Map();
 let active_receiver="";
@@ -111,8 +112,16 @@ io.on("connection", (socket) => {
   }
 );
 
+ //when a user delete a messge for everyone
+ socket.on("deleteMsgForBoth",({receiverId,delAtIdx})=>{
+  
+  console.log(delAtIdx);
+  socket.to(onlineUsers.get(receiverId)).emit("delMsg",delAtIdx);
+
+
 });
- 
+});
+
 
 
 async function getCollectionNames() {
@@ -299,7 +308,14 @@ app.post("/api/getAllMessages", async (req, res) => {
     let allMsgs=sentChats.concat(received_messages);
     res.json({ success: true,sent : sentChats, received : received_messages,allMessages: allMsgs,loggedIn:loggedIn });
 }});
+app.post("/api/deleteMsg", async (req, res) => {
+  const {sender,msgId} = req.body;
+  let Chat = mongoose.model(sender, chatSchema);
+  await Chat.findByIdAndDelete(msgId);
+  // console.log(sender,msgId);
 
+  res.json({});
+});
 // app.use((req, res) => {
 //   res.status(404).render("notFound"); // Assuming you have a 404.ejs or 404.html
 // });
@@ -316,13 +332,13 @@ app.use((req, res, next) => {
 //   console.log("wispr on port 3000");
 // });
 // Remove this entire block:
-// server.listen(3000, '0.0.0.0', () => {
-//   console.log("Wispr server running on port 3000");
-// });
-
-// Replace with Vercel-compatible export:
-module.exports = app;
 server.listen(3000, '0.0.0.0', () => {
   console.log("Wispr server running on port 3000");
 });
+
+// Replace with Vercel-compatible export:
+// module.exports = app;
+// server.listen(3000, () => {
+//   console.log("Wispr server running on port 3000");
+// });
 

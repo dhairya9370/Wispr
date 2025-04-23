@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,18 +24,17 @@
         padding:8px;
       }
 
-      .btn-danger{
-        margin:4px;
-        padding:4px;
-        width:100%;
-        background-color: rgb(237, 98, 98);
-        color:white;
-        border-radius: 7px;
-
-      }
+      .btn-danger {
+    margin: 4px;
+    padding: 4px;
+    width: 250px; /* Fixed width */
+    background-color: rgb(215, 50, 50);
+    color: white;
+    border-radius: 7px;
+    text-align: center; /* Center the text */
+}
     </style>
 </head>
-
 <body>
     <div class="top-bar">
         <div class="left">
@@ -130,7 +128,6 @@
 
             </div>
             <div id="rightClickMenu">
-                <div id="deleteForSender" class="btn-danger">Delete for me</div>
                 <div id="deleteForBoth" class="btn-danger">Delete for everyone</div>
             </div>
 
@@ -418,7 +415,7 @@
         let messageInput = document.querySelector("#messageInput");
         // console.log(loggedIn);
         let active_receiver_id="";
-
+        let receivedMsgsObj=[];let sentMsgsObj = [];let unsorted =[];
         async function sortChats() {
             if(active_receiver_id!=""){
             const response = await fetch("/api/getAllMessages", {
@@ -428,8 +425,8 @@
             });
             const result = await response.json();
             // console.log(result.received,result.sent);
-            let receivedMsgsObj = result.received;
-            let sentMsgsObj = result.sent;
+            receivedMsgsObj = result.received;
+            sentMsgsObj = result.sent;
             let receivedUnsorted = [];
             for (msg of receivedMsgsObj) {
                 if (msg.from_id == active_receiver_id) {
@@ -461,7 +458,7 @@
                     sentUnsorted.push(message);
                 }
             }
-            let unsorted = receivedUnsorted.concat(sentUnsorted);
+            unsorted = receivedUnsorted.concat(sentUnsorted);
             // console.log(unsorted);
             sortedMsgs = await unsorted.sort((a, b) => {
                 let timeA = new Date(a.querySelector(".chattingbox-chat-time").textContent.trim());
@@ -673,21 +670,50 @@
             }
         
         const rightClickMenu = document.getElementById('rightClickMenu');
-        const deleteForSender=rightClickMenu.querySelector("#deleteForSender");
+        // const deleteForSender=rightClickMenu.querySelector("#deleteForSender");
         const deleteForBoth=rightClickMenu.querySelector("#deleteForBoth");
+        let msgToDelete="";let delMsgId="";let delMsgIdx=-1;
+        
+        // deleteForSender.addEventListener('click', async() => {
+            
+        //     const response = await fetch("/api/deleteMsg", {
+        //         method: "POST",
+        //         headers: { "Content-Type": "application/json" },
+        //         body: JSON.stringify({sender:loggedIn,receiver:active_receiver_id,msgStatus:msgStatus})
+        //     });
+        //     // const result = await response.json();
+        //     //   alert("Do u Want to Delete This Message For U?");
+        //   rightClickMenu.style.display = 'none';
+        //   msgStatus="";
+        // });
+        // deleteForBoth.addEventListener('click', async() => {
+        //     console.log(delMsgId,msgToDelete);
+        //     msgToDelete.innerHTML="<i  style='color:grey'>You Deleted This Message</i>";
+        //     // const response = await fetch("/api/deleteMsg", {
+        //     //     method: "POST",
+        //     //     headers: { "Content-Type": "application/json" },
+        //     //     body: JSON.stringify({sender:loggedIn,msgId:delMsgId }),
+        //     // });
+        //     // const result = await response.json();
+        //     //   alert("Do u Want to Delete This Message For Both?");
+        //     // console.log(receiver_status.innerText);
+        //     if(receiver_status.innerText.trim()=="online"){
+        //     socket.emit("deleteMsgForBoth",{receiverId:active_receiver_id,delAtIdx:delMsgIdx});
 
-        deleteForSender.addEventListener('click', () => {
-          alert("Do u Want to Delete This Message For U?");
-          rightClickMenu.style.display = 'none';
+        //     }
+            
+        //     rightClickMenu.style.display = 'none';
+        //     msgToDelete="";delMsgId="";
+        // });
+        socket.on("delMsg",async(delAtIdx)=>{
+            let allMsgs=document.querySelectorAll(".received");
+            Array.from(allMsgs)[delAtIdx].innerHTML="<i style='color:grey'>This Message Was deleted</i>";
         });
-        deleteForBoth.addEventListener('click', () => {
-          alert("Do u Want to Delete This Message For Both?");
-          rightClickMenu.style.display = 'none';
-        });
-        // messages.addEventListener("")
+        
         document.addEventListener('click', (e) => {
           if (!rightClickMenu.contains(e.target)) {
             rightClickMenu.style.display = 'none';
+            msgToDelete="";delMsgId="";delMsgIdx=-1;
           }
         });
         document.addEventListener("DOMContentLoaded",async()=>{
@@ -696,34 +722,84 @@
             // setTimeout(async()=>{console.log(await sortChats())},5000);
         });
         function applyDeleteEventListenerOnMsgs(){
-            const messages =document.querySelectorAll(".message");
-                messages.forEach((msg)=>{
+            const messages = document.querySelectorAll(".message");
+            //ye pura message ka event listener send Btn ke andar modify karke dalna padta aur
+            messages.forEach((msg)=>{
+                // console.log(msg);
+                if(msg.classList.contains("sent")){
                     msg.addEventListener("contextmenu", (e) => {
+                        let idx=-1;let target="";
+                        msgToDelete=msg;
+                        for(let j=0;j<messages.length;j++){
+                            if(messages[j].classList.contains("sent")){
+                                idx++;
+                                delMsgIdx=idx;
+                            }
+                            if(messages[j]==msg){break;}
+                        }
+                        
+                        // console.log("updated msg index before deleting : ", delMsgIdx);
+                        // console.log(sentMsgsObj[idx]["_id"]);
+                        delMsgId=sentMsgsObj[idx]["_id"].toString();
+                        // console.log(sortedMsgs.indexOf(msg));
+                        msgStatus="sent";
                         e.preventDefault();
                         rightClickMenu.style.display = 'block';
-                        rightClickMenu.style.left = `${e.pageX}px`;
+                        // rightClickMenu.querySelector("#deleteForBoth").style.display="block";
+                        rightClickMenu.style.left = `${e.pageX-300}px`;
                         rightClickMenu.style.top = `${e.pageY}px`;
                     });
+                }
+                // else if(msg.classList.contains("received")){
+                    
+                //     msg.addEventListener("contextmenu", (e) => {
+                //         console.log(receivedMsgsObj);
+                //         // console.log(sortedMsgs.indexOf(msg));
+                        
+                //         msgStatus="received";
+                //         e.preventDefault();
+                //         rightClickMenu.style.display = 'block';
+                //         rightClickMenu.querySelector("#deleteForBoth").style.display="none";
+                //         rightClickMenu.style.left = `${e.pageX+20}px`;
+                //         rightClickMenu.style.top = `${e.pageY}px`;
+                //     });
+                // }
+            });
+            
+            deleteForBoth.addEventListener('click', async() => {
+                // console.log(delMsgIdx,msgToDelete);
+                msgToDelete.innerHTML="<i  style='color:grey'>You Deleted This Message</i>";
+                const response = await fetch("/api/deleteMsg", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({sender:loggedIn,msgId:delMsgId }),
                 });
+                const result = await response.json();
+                //   alert("Do u Want to Delete This Message For Both?");
+                // console.log(receiver_status.innerText);
+                if(receiver_status.innerText.trim()=="online"){
+                    socket.emit("deleteMsgForBoth",{receiverId:active_receiver_id,delAtIdx:delMsgIdx});
+            }
+            
+            rightClickMenu.style.display = 'none';
+            msgToDelete="";delMsgId="";
+            });
         }
         async function activateChatBoxes(){
             chatBoxes.forEach(chatbox => {
                 chatbox.addEventListener("mouseover", function () {
                 this.style.background = "#e9ecef"; // Light gray on hover
-            });
-            
+                });
                 chatbox.addEventListener("mouseout", function () {
                 this.style.background = ""; // Reset background on hover out
-            });
-            
+                });
                 chatbox.addEventListener("mousedown", function () {
                 this.style.background = "#d6d8db";
 
-            });
-            
+                });
                 chatbox.addEventListener("mouseup", function () {
                 this.style.background = "#e9ecef"; // Back to hover color after release
-            });
+                });
             
                 chatbox.addEventListener("click", async function () {
                     // console.log("clicked chatbox",chatbox.querySelector("#to_id").innerText.trim().toLowerCase());
@@ -731,6 +807,8 @@
                     receiver_id.innerText = chatbox.querySelector("#to_id").innerText.trim().toLowerCase();
                     active_receiver_id= receiver_id.innerText;
                     await insertChatMsgs(receiver_id.innerText,receiver_name.innerText);
+                    // const messages =document.querySelectorAll(".message");
+                    // console.log(messages);
                     applyDeleteEventListenerOnMsgs();
                     messageInput.value = ""; messageInput.dispatchEvent(new Event('input'));
                     
@@ -840,9 +918,42 @@
                     chatBox.appendChild(date);
                     chatBox.appendChild(msg);
                 }
+                // let idx=-1;
+                // for(let j=0;j<sortedMsgs.length;j++){
+                //             if(sortedMsgs[j].classList.contains("sent")){
+                //                 idx++;
+                //             }
+                            
+                //         }
+                // delMsgIdx=idx;
+                // console.log("delMsgIdx,msgToDelete",delMsgIdx,msgToDelete);
+                // msgToDelete=msg;
+                // applyDeleteEventListenerOnMsgs();delMsgIdx=-1;
+                msg.addEventListener("contextmenu", (e) => {
+                    let idx=-1;let target="";
+                    msgToDelete=msg;
+                    for(let j=0;j<sortedMsgs.length;j++){
+                        if(sortedMsgs[j].classList.contains("sent")){
+                        idx++;
+                        delMsgIdx=idx;
+                    }
+                    }
+                    // console.log("updated msg index before deleting : ", delMsgIdx);
+                    // console.log(sentMsgsObj[idx]["_id"]);
+                    // console.log(sentMsgsObj,sentMsgsObj[idx],sentMsgsObj[idx]["_id"]);
+                    delMsgId=sentMsgsObj[idx]["_id"].toString();
+                    // console.log(sortedMsgs.indexOf(msg));
+                    msgStatus="sent";
+                    e.preventDefault();
+                    rightClickMenu.style.display = 'block';
+                    // rightClickMenu.querySelector("#deleteForBoth").style.display="block";
+                    rightClickMenu.style.left = `${e.pageX-300}px`;
+                    rightClickMenu.style.top = `${e.pageY}px`;
+                });
                 chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: "smooth" });
                 messageInput.value = ""; messageInput.dispatchEvent(new Event('input'));
-            }catch (error) {
+            }
+            catch (error) {
                 console.error("Error sending message:", error); // Debugging output
             }
         });
@@ -863,9 +974,10 @@
                     time.className = "chattingbox-chat-time";
                     time.innerText =addTimeStampsInChats(at).time;
                     let message = document.createElement("div");
-                    message.className = "message received";
+                    message.className = "message received recentlyReceived";
                     message.appendChild(p);
                     message.appendChild(time);
+                    
                     // console.log("last message was : ",addTimeStampsInChats(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText).date);
                     // console.log(sortedMsgs[sortedMsgs.length - 2].querySelector(".chattingbox-chat-time").innerText);
 
