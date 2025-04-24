@@ -446,6 +446,28 @@
     right: 8px; /* ✅ Ensures time stays at bottom-right */
     white-space: nowrap;
         }
+        #rightClickMenu {
+            cursor: pointer;
+            position: absolute;
+            display: none;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding: 10px;
+            z-index: 9999;
+            border-radius: 8px;
+            padding:8px;
+          }
+    
+          .btn-danger {
+        margin: 4px;
+        padding: 4px;
+        width: 250px; /* Fixed width */
+        background-color: rgb(215, 50, 50);
+        color: white;
+        border-radius: 7px;
+        text-align: center; /* Center the text */
+    }
         #chat-input {
     
     display: flex;
